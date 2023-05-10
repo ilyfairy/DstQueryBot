@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Ilyfairy.DstQueryBot.LobbyModels;
 
@@ -179,12 +180,12 @@ public partial class ServerQueryManager
     public async Task UpdateList(QueryUser user)
     {
         if (user.Query == null) return;
-        user.LobbyData = await GetList(GetUrlQueryList(user.Query!));
+        user.LobbyData = await GetListAsync(GetUrlQueryList(user.Query!));
     }
 
     public async Task<string> GetDetailsDataString(string rowId)
     {
-        var details = await GetDetails(rowId);
+        var details = await GetDetailsAsync(rowId);
         StringBuilder s = new(128);
         s.AppendLine($"{details.Name} ({details.Connected}/{details.MaxConnections}) {(details.Password ? "🔒" : "")}");
         s.AppendLine($"地址: {details.Address}:{details.Port}");
@@ -209,7 +210,7 @@ public partial class ServerQueryManager
 
     public async Task<string?> GetBriefsDataString(string rowId)
     {
-        var details = await GetDetails(rowId);
+        var details = await GetDetailsAsync(rowId);
         StringBuilder s = new(128);
         s.AppendLine($"{details.Name} ({details.Connected}/{details.MaxConnections}) {(details.Password ? "🔒" : "")}");
         s.AppendLine($"模式: {details.Intent}/{details.Mode}");
@@ -295,7 +296,7 @@ public partial class ServerQueryManager
         return Users.GetOrAdd(userId, k => new QueryUser());
     }
 
-    public async Task<LobbyDetailsData> GetDetails(string rowId)
+    public async Task<LobbyDetailsData> GetDetailsAsync(string rowId)
     {
         var response = await http.PostAsync($"https://api.dstserverlist.top/api/details?id={WebUtility.UrlEncode(rowId)}", null);
         var data = await response.Content.ReadFromJsonAsync<LobbyDetailsData>();
@@ -303,13 +304,30 @@ public partial class ServerQueryManager
         return data;
     }
 
-    public async Task<LobbyResult> GetList(KeyValuePair<string, string>[]? searchParams = null, CancellationToken cancellationToken = default)
+    public async Task<LobbyResult> GetListAsync(KeyValuePair<string, string>[]? searchParams = null, CancellationToken cancellationToken = default)
     {
         string? searchParamsString = searchParams == null ? null : string.Join("&", searchParams.Select(v => $"{WebUtility.UrlEncode(v.Key)}={WebUtility.UrlEncode(v.Value)}"));
         var response = await http.PostAsync($"https://api.dstserverlist.top/api/list?{searchParamsString}", null, cancellationToken);
         var data = await response.Content.ReadFromJsonAsync<LobbyResult>();
         if (data == null) throw new Exception("get dst list failed");
         return data;
+    }
+
+    public async Task<long?> GetVersionAsync()
+    {
+        try
+        {
+            var response = await http.PostAsync($"https://api.dstserverlist.top/api/server/version", null);
+            var data = await response.Content.ReadAsStringAsync();
+            if (data == null) throw new Exception("get dst list failed");
+            JsonNode? json = JsonNode.Parse(data);
+            if (json == null) return null;
+            return json["version"]?.GetValue<long>();
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     [GeneratedRegex(@"^(?<type>(\.|p|page))?(?<val>\d+)$")]

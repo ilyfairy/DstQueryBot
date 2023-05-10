@@ -20,9 +20,21 @@ internal class Program
         session.UseGroupMessage(async context =>
         {
             var r = await dst.Input($"{context.UserId}:{context.GroupId}", context.RawMessage);
-            if(r != null)
+            if (r != null)
             {
                 await session.SendGroupMessageAsync(context.GroupId, new CqMessage(r));
+                return;
+            }
+            if (new[] { "饥荒版本", "获取饥荒版本" }.Any(v => context.RawMessage.Trim() == v))
+            {
+                if (await dst.GetVersionAsync() is long version && version > 0)
+                {
+                    await session.SendGroupMessageAsync(context.GroupId, new CqMessage($"饥荒最新版本是 {version}"));
+                }
+                else
+                {
+                    await session.SendGroupMessageAsync(context.GroupId, new CqMessage("获取饥荒最新版本失败"));
+                }
             }
         });
 
