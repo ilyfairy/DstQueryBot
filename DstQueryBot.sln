@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33620.401
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DstQueryBot", "DstQueryBot\DstQueryBot.csproj", "{FA820005-009E-46D5-BCAA-07B8B2604BAF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FA820005-009E-46D5-BCAA-07B8B2604BAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA820005-009E-46D5-BCAA-07B8B2604BAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA820005-009E-46D5-BCAA-07B8B2604BAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA820005-009E-46D5-BCAA-07B8B2604BAF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3FEF082C-5326-44AE-A4AE-D3B3233615F1}
+	EndGlobalSection
+EndGlobal
