@@ -5,10 +5,12 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RootNamespace>Ilyfairy.DstQueryBot</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="EleCho.GoCqHttpSdk" Version="1.0.12" />
+    <PackageReference Include="EleCho.GoCqHttpSdk" Version="1.0.13" />
+    <PackageReference Include="EleCho.GoCqHttpSdk.MessageMatching" Version="1.0.3" />
   </ItemGroup>
 
 </Project>

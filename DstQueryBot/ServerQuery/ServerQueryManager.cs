@@ -112,8 +112,14 @@ public partial class ServerQueryManager
         }
     }
 
+    public QueryConfig Config { get; }
 
+    public ServerQueryManager(QueryConfig? config = null)
+    {
+        Config = config ?? new();
+    }
 
+    #region SetValue
     public void SetQueryServer(QueryUser user, string serverName)
     {
         if (user.Query is null) return;
@@ -175,14 +181,10 @@ public partial class ServerQueryManager
             return null;
         }
     }
+    #endregion
 
 
-    public async Task UpdateList(QueryUser user)
-    {
-        if (user.Query == null) return;
-        user.LobbyData = await GetListAsync(GetUrlQueryList(user.Query!));
-    }
-
+    #region GetString
     public async Task<string> GetDetailsDataString(string rowId)
     {
         var details = await GetDetailsAsync(rowId);
@@ -207,7 +209,6 @@ public partial class ServerQueryManager
         }
         return s.ToString().Trim();
     }
-
     public async Task<string?> GetBriefsDataString(string rowId)
     {
         var details = await GetDetailsAsync(rowId);
@@ -225,7 +226,6 @@ public partial class ServerQueryManager
         }
         return s.ToString().Trim();
     }
-
     public string? GetServerQueryString(QueryUser user)
     {
         if (user.LobbyData == null || user.Query == null || user.QueryType != QueryType.Server) return null;
@@ -234,7 +234,7 @@ public partial class ServerQueryManager
         s.AppendLine($"当前是第{user.LobbyData.Page + 1}页 一共{user.LobbyData.MaxPage + 1}页");
         for (int i = 0; i < Math.Min(user.LobbyData.List.Length, user.Query.PageCount); i++)
         {
-            s.AppendLine($"{i + 1}. {user.LobbyData.List[i].Name} ({user.LobbyData.List[i].Connected}/{user.LobbyData.List[i].MaxConnections})");
+            s.AppendLine($"{i + 1}. {GetServerSingleLineString(user.LobbyData.List[i])}");
         }
         return s.ToString().Trim();
     }
@@ -246,12 +246,18 @@ public partial class ServerQueryManager
         s.AppendLine($"当前是第{user.LobbyData.Page + 1}页 一共{user.LobbyData.MaxPage + 1}页");
         for (int i = 0; i < Math.Min(user.LobbyData.List.Length, user.Query.PageCount); i++)
         {
-            s.AppendLine($"{i + 1}. {user.LobbyData.List[i].Name} ({user.LobbyData.List[i].Connected}/{user.LobbyData.List[i].MaxConnections})");
+            s.AppendLine($"{i + 1}. {GetServerSingleLineString(user.LobbyData.List[i])}");
             s.AppendLine($"  玩家: {user.LobbyData.List[i].GetPlayersString(v => v.Name.Contains(user.Query.PlayerName))}");
         }
         return s.ToString().Trim();
     }
+    #endregion
 
+    public async Task UpdateList(QueryUser user)
+    {
+        if (user.Query == null) return;
+        user.LobbyData = await GetListAsync(GetUrlQueryList(user.Query!));
+    }
 
     public KeyValuePair<string, string>[] GetUrlQueryList(QueryKeys query)
     {
@@ -285,17 +291,30 @@ public partial class ServerQueryManager
         return queryList.ToArray();
     }
 
-
     public void RemoveUser(string userId)
     {
         Users.TryRemove(userId, out _);
     }
-
     public QueryUser GetOrAddUser(string userId)
     {
         return Users.GetOrAdd(userId, k => new QueryUser());
     }
 
+    #region GetStringExtension
+    private string GetServerSingleLineString(LobbyDetailsData data)
+    {
+        if (Config.IsShowPlatformType)
+        {
+            return $"{data.Name} [{data.Platform}] ({data.Connected}/{data.MaxConnections})";
+        }
+        else
+        {
+            return $"{data.Name} ({data.Connected}/{data.MaxConnections})";
+        }
+    }
+    #endregion
+
+    #region Api
     public async Task<LobbyDetailsData> GetDetailsAsync(string rowId)
     {
         var response = await http.PostAsync($"https://api.dstserverlist.top/api/details?id={WebUtility.UrlEncode(rowId)}", null);
@@ -329,6 +348,7 @@ public partial class ServerQueryManager
             return null;
         }
     }
+    #endregion
 
     [GeneratedRegex(@"^(?<type>(\.|p|page))?(?<val>\d+)$")]
     private static partial Regex DstSelectRegex();
