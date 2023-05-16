@@ -163,7 +163,7 @@ public partial class ServerQueryManager
             {
                 user.Query.Host = host;
             }
-            if (MatchKey(filter, "day") is string day)
+            if (MatchKey(filter, "day", "天数") is string day)
             {
                 user.Query.Day = day;
             }
@@ -175,7 +175,7 @@ public partial class ServerQueryManager
             {
                 if (str.StartsWith($"{item} ", StringComparison.OrdinalIgnoreCase))
                 {
-                    return str[keys.Length..].Trim();
+                    return str[item.Length..].Trim();
                 }
             }
             return null;

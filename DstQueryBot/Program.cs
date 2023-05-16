@@ -23,6 +23,8 @@ internal class Program
         //查询服务器
         session.UseGroupMessage(async context =>
         {
+            await Console.Out.WriteLineAsync($"接收消息: {context.RawMessage}");
+
             var r = await dst.Input($"{context.UserId}:{context.GroupId}", context.RawMessage);
             if (r != null)
             {
@@ -69,7 +71,10 @@ internal class Program
             }
             catch (Exception e)
             {
-                await Console.Out.WriteLineAsync($"异常 重连...{e}");
+                if (session.IsConnected)
+                {
+                    await session.StopAsync();
+                }
             }
             await Task.Delay(1000);
         }
