@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Ilyfairy.DstQueryBot</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>ilyfairy</Authors>
   </PropertyGroup>
 
   <ItemGroup>
