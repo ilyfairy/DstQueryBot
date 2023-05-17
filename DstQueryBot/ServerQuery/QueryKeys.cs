@@ -12,4 +12,5 @@ public class QueryKeys
     public int? ConnectionCount { get; set; }
     public int PageCount { get; set; } = 9;
     public int Page { get; set; } = 0;
+    public string Season { get; internal set; }
 }

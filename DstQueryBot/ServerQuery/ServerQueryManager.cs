@@ -159,6 +159,10 @@ public partial class ServerQueryManager
                     if (connected >= 0) user.Query.ConnectionCount = connected;
                 }
             }
+            if (MatchKey(filter, "season", "季节") is string season)
+            {
+                user.Query.Season = season;
+            }
             if (MatchKey(filter, "host") is string host)
             {
                 user.Query.Host = host;
@@ -285,6 +289,10 @@ public partial class ServerQueryManager
         if (query.PlayerName is { } playerName)
         {
             queryList.Add(new("PlayerName", playerName));
+        }
+        if (query.Season is { } season)
+        {
+            queryList.Add(new("season", season));
         }
         queryList.Add(new("Page", query.Page.ToString()));
         queryList.Add(new("PageCount", query.PageCount.ToString()));
