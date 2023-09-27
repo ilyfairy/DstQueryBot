@@ -15,7 +15,7 @@ namespace Test
                 Console.WriteLine(">>> ");
                 string? input = Console.ReadLine();
                 if (input == null) break;
-                var r = await manager.Input("console", input+"\nDay 0");
+                var r = await manager.InputAsync("console", input+"\nDay 0");
                 Console.WriteLine(r);
             }
 

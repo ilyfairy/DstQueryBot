@@ -16,7 +16,7 @@ public partial class ServerQueryManager
 
     public ConcurrentDictionary<string, QueryUser> Users { get; } = new(Environment.ProcessorCount, 100);
 
-    public async Task<string?> Input(string userId, string prompt)
+    public async Task<string?> InputAsync(string userId, string prompt, CancellationToken cancellationToken)
     {
         string[] split = prompt.Split("\n", StringSplitOptions.RemoveEmptyEntries).Select(v => v.Trim()).ToArray();
         if (split.Length == 0)
@@ -26,7 +26,6 @@ public partial class ServerQueryManager
         }
 
         var user = GetOrAddUser(userId);
-
 
         try
         {
@@ -74,13 +73,13 @@ public partial class ServerQueryManager
                             {
                                 return "超出范围";
                             }
-                            return await GetBriefsDataString(user.LobbyData.List[index - 1].RowId);
+                            return await GetBriefsDataStringAsync(user.LobbyData.List[index - 1].RowId, cancellationToken);
                         case ".":
                             if (index <= 0 || index > user.LobbyData.List.Length)
                             {
                                 return "超出范围";
                             }
-                            return await GetDetailsDataString(user.LobbyData.List[index - 1].RowId);
+                            return await GetDetailsDataStringAsync(user.LobbyData.List[index - 1].RowId, cancellationToken);
                         case "p" or "page":
                             if (index <= 0 || index > user.LobbyData.MaxPage + 1)
                             {
@@ -189,9 +188,9 @@ public partial class ServerQueryManager
 
 
     #region GetString
-    public async Task<string> GetDetailsDataString(string rowId)
+    public async Task<string> GetDetailsDataStringAsync(string rowId, CancellationToken cancellationToken)
     {
-        var details = await GetDetailsAsync(rowId);
+        var details = await GetDetailsAsync(rowId, cancellationToken);
         StringBuilder s = new(128);
         s.AppendLine($"{details.Name} ({details.Connected}/{details.MaxConnections}) {(details.Password ? "🔒" : "")}");
         s.AppendLine($"地址: {details.Address}:{details.Port}");
@@ -213,9 +212,9 @@ public partial class ServerQueryManager
         }
         return s.ToString().Trim();
     }
-    public async Task<string?> GetBriefsDataString(string rowId)
+    public async Task<string?> GetBriefsDataStringAsync(string rowId, CancellationToken cancellationToken)
     {
-        var details = await GetDetailsAsync(rowId);
+        var details = await GetDetailsAsync(rowId, cancellationToken);
         StringBuilder s = new(128);
         s.AppendLine($"{details.Name} ({details.Connected}/{details.MaxConnections}) {(details.Password ? "🔒" : "")}");
         s.AppendLine($"模式: {details.Intent}/{details.Mode}");
@@ -323,7 +322,7 @@ public partial class ServerQueryManager
     #endregion
 
     #region Api
-    public async Task<LobbyDetailsData> GetDetailsAsync(string rowId)
+    public async Task<LobbyDetailsData> GetDetailsAsync(string rowId, CancellationToken cancellationToken = default)
     {
         var response = await http.PostAsync($"https://api.dstserverlist.top/api/details?id={WebUtility.UrlEncode(rowId)}", null);
         var data = await response.Content.ReadFromJsonAsync<LobbyDetailsData>();
@@ -340,7 +339,7 @@ public partial class ServerQueryManager
         return data;
     }
 
-    public async Task<long?> GetVersionAsync()
+    public async Task<long?> GetVersionAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -358,6 +357,6 @@ public partial class ServerQueryManager
     }
     #endregion
 
-    [GeneratedRegex(@"^(?<type>(\.|p|page))?(?<val>\d+)$")]
+    [GeneratedRegex(@"^((?<type>(\.|p|page))?(?<val>\d+)|(?<val>\d+)(?<type>(\.)))$")]
     private static partial Regex DstSelectRegex();
 }

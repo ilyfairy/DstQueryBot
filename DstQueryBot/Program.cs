@@ -16,31 +16,80 @@ internal class Program
             BaseUri = new(config.Ws),
             UseApiEndPoint = true,
             UseEventEndPoint = true,
+            AccessToken = config.AccessToken
         });
 
         ServerQueryManager dst = new(config.DstQueryConfig);
 
+        AppDomain.CurrentDomain.UnhandledException += (e, sender) =>
+        {
+            Console.WriteLine($"未经处理的异常:{sender.ExceptionObject}");
+        };
+
+        
+
+        async ValueTask<bool> IsNotSend(long groupId)
+        {
+            var info = await session.GetGroupMemberListAsync(groupId);
+            return info?.Members.Any(v => config?.NotSendQQ.Contains(v.UserId) ?? true) ?? true;
+        }
+
+
+        session.UseAny(async (context,next) =>
+        {
+            _ = next();
+        });
+
         //查询服务器
         session.UseGroupMessage(async context =>
         {
+            if (await IsNotSend(context.GroupId)) return;
+
             await Console.Out.WriteLineAsync($"接收消息: {context.RawMessage}");
 
-            var r = await dst.Input($"{context.UserId}:{context.GroupId}", context.RawMessage);
+            string? r;
+            try
+            {
+                CancellationTokenSource cts = new();
+                cts.CancelAfter(5000);
+                r = await dst.InputAsync($"{context.UserId}:{context.GroupId}", context.RawMessage, cts.Token);
+            }
+            catch (Exception ex)
+            {
+                await session.SendGroupMessageAsync(context.GroupId, new CqMessage("获取失败"));
+                return;
+            }
             if (r != null)
             {
                 await session.SendGroupMessageAsync(context.GroupId, new CqMessage(r));
+                Console.WriteLine("结束");
+                Console.WriteLine();
                 return;
             }
+
+            Console.WriteLine("结束");
+            Console.WriteLine();
         });
 
         //获取饥荒版本
         session.UseGroupMessageMatch(@"^\s*(饥荒版本|获取饥荒版本)\s*$", async context =>
         {
-            if (await dst.GetVersionAsync() is long version && version > 0)
+            if (await IsNotSend(context.GroupId)) return;
+
+            try
             {
-                await session.SendGroupMessageAsync(context.GroupId, new CqMessage($"饥荒最新版本是 {version}"));
+                CancellationTokenSource cts = new();
+                cts.CancelAfter(5000);
+                if (await dst.GetVersionAsync(cts.Token) is long version && version > 0)
+                {
+                    await session.SendGroupMessageAsync(context.GroupId, new CqMessage($"饥荒最新版本是 {version}"));
+                }
+                else
+                {
+                    await session.SendGroupMessageAsync(context.GroupId, new CqMessage("获取饥荒最新版本失败"));
+                }
             }
-            else
+            catch (Exception)
             {
                 await session.SendGroupMessageAsync(context.GroupId, new CqMessage("获取饥荒最新版本失败"));
             }
@@ -49,6 +98,8 @@ internal class Program
         //帮助
         session.UseGroupMessageMatch(config.HelpRegex, async context =>
         {
+            if (await IsNotSend(context.GroupId)) return;
+
             const string fileName = "dst.png";
             if (File.Exists(fileName))
             {
@@ -57,26 +108,31 @@ internal class Program
             }
         });
 
-        while (true)
+        await Task.Run(async () =>
         {
-            try
+            while (true)
             {
-                await session.StartAsync();
-                Console.WriteLine("启动成功");
-
-                await session.WaitForShutdownAsync();
-                await session.StopAsync();
-
-                await Console.Out.WriteLineAsync("断开 重连...");
-            }
-            catch (Exception e)
-            {
-                if (session.IsConnected)
+                try
                 {
+                    await session.StartAsync();
+                    Console.WriteLine("启动成功");
+
+                    await session.WaitForShutdownAsync();
                     await session.StopAsync();
+
+                    await Console.Out.WriteLineAsync("断开 重连...");
                 }
+                catch (Exception e)
+                {
+                    if (session.IsConnected)
+                    {
+                        await session.StopAsync();
+                    }
+                }
+                await Task.Delay(1000);
             }
-            await Task.Delay(1000);
-        }
+        });
+
+
     }
 }
