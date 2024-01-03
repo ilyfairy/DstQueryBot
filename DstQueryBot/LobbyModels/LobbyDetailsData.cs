@@ -1,4 +1,6 @@
-﻿using System.Text.Json.Serialization;
+﻿using Ilyfairy.DstQueryBot.Helpers;
+using Ilyfairy.DstServerQuery.Models;
+using System.Text.Json.Serialization;
 
 namespace Ilyfairy.DstQueryBot.LobbyModels;
 
@@ -7,117 +9,161 @@ namespace Ilyfairy.DstQueryBot.LobbyModels;
 /// </summary>
 public class LobbyDetailsData
 {
+    [JsonPropertyName("Name")]
     public string Name { get; set; } //房间名称
 
-    public string Address { get; set; } //ip地址
+    [JsonPropertyName("Address")]
+    public IPAddressInfo Address { get; set; } //ip地址信息
 
+    [JsonPropertyName("Port")]
     public int Port { get; set; } //端口
 
+    [JsonPropertyName("RowId")]
     public string RowId { get; set; } //房间id
 
+    [JsonPropertyName("Connected")]
     public int Connected { get; set; } //在线玩家个数
 
-    public bool Dedicated { get; set; } //是否是专用服务器
+    [JsonPropertyName("IsDedicated")]
+    public bool IsDedicated { get; set; } //是否是专用服务器
 
+    [JsonPropertyName("Host")]
     public string Host { get; set; } //房主KleiID
 
-    //[JsonConverter(typeof(EnumConverter<IntentionType>))]
+    [JsonPropertyName("Intent")]
     public string Intent { get; set; } //风格
 
+    [JsonPropertyName("MaxConnections")]
     public int MaxConnections { get; set; } //最大玩家限制
 
-    //[JsonConverter(typeof(EnumConverter<GameMode>))]
+    [JsonPropertyName("Mode")]
     public string Mode { get; set; } //模式
 
-    public bool Mods { get; set; } //是否开启mod
+    [JsonPropertyName("IsMods")]
+    public bool IsMods { get; set; } //是否开启mod
 
-    public bool Password { get; set; } //是否需要密码
+    [JsonPropertyName("IsPassword")]
+    public bool IsPassword { get; set; } //是否需要密码
 
-    //[JsonConverter(typeof(EnumConverter<Platform>))]
+    [JsonPropertyName("Platform")]
     public string Platform { get; set; } //平台信息
 
-    //[JsonConverter(typeof(EnumConverter<Season>))]
+    [JsonPropertyName("Season")]
     public string Season { get; set; } //季节
 
-    [JsonPropertyName("pvp")]
-    public bool PVP { get; set; } //是否启用pvp
+    [JsonPropertyName("IsPvp")]
+    public bool IsPvp { get; set; } //是否启用pvp
 
-    [JsonPropertyName("v")]
-    public int Version { get; set; } //版本
+    [JsonPropertyName("Version")]
+    public long Version { get; set; } //版本
 
-    [JsonPropertyName("session")]
+    [JsonPropertyName("Session")]
     public string Session { get; set; } //会话id
 
-    public string? Country { get; set; }
 
-    public List<LobbyPlayerInfo> Players { get; set; } //玩家信息
 
-    public long LastPing { get; set; } //上次与大厅通信时间
 
-    public string SteamClanId { get; set; } //steam群组gid
+    [JsonPropertyName("IsClanOnly")]
+    public bool IsClanOnly { get; set; } //仅限steam群组成员加入
 
-    public object Slaves { get; set; } //json
+    [JsonPropertyName("IsFriendsOnly")]
+    public bool IsFriendsOnly { get; set; } //是否仅限好友加入
 
-    public object Secondaries { get; set; } //json
+    [JsonPropertyName("Slaves")]
+    public WorldLevelItem[]? Slaves { get; set; } //json
 
-    public bool ClanOnly { get; set; } //仅限steam群组成员加入
+    [JsonPropertyName("Secondaries")]
+    public WorldLevelItem[]? Secondaries { get; set; } //json
 
-    public bool Fo { get; set; } //是否仅限好友加入
+    [JsonPropertyName("IsAllowNewPlayers")]
+    public bool IsAllowNewPlayers { get; set; } //是否允许新玩家加入
 
-    public string Guid { get; set; } //GUID
+    [JsonPropertyName("IsServerPaused")]
+    public bool IsServerPaused { get; set; } //世界是否暂停
 
-    public bool ClientHosted { get; set; } //是否是客户端主机
+    [JsonPropertyName("SteamId")]
+    public string? SteamId { get; set; }
 
-    public string OwnerNetId { get; set; } //steamid
+    [JsonPropertyName("SteamRoom")]
+    public string? SteamRoom { get; set; }
 
-    public string[] Tags { get; set; } //Tags
+    [JsonPropertyName("Tags")]
+    public string[]? Tags { get; set; } //Tags
 
-    public bool LanOnly { get; set; } //是否仅局域网
+    [JsonPropertyName("Guid")]
+    public string? Guid { get; set; } //GUID
 
-    public string Desc { get; set; } //房间描述
+    [JsonPropertyName("IsClientHosted")]
+    public bool IsClientHosted { get; set; } //是否是客户端主机
 
-    public int Tick { get; set; } //Tick
+    [JsonPropertyName("SteamClanId")]
+    public string? SteamClanId { get; set; } //steam群组gid
 
-    public bool ClientModsOff { get; set; }
+    [JsonPropertyName("OwnerNetId")]
+    public string? OwnerNetId { get; set; } //steamid
 
-    public int Nat { get; set; } //服务器网络类型  公网5内网7
+    [JsonPropertyName("IsLanOnly")]
+    public bool IsLanOnly { get; set; } //是否仅局域网
 
-    public bool AllowNewPlayers { get; set; } //是否允许新玩家加入
 
-    public bool Event { get; set; }
 
-    public bool ValveCloudServer { get; set; }
 
-    public string ValvePopId { get; set; }
+    [JsonPropertyName("Players")]
+    public LobbyPlayerInfo[]? Players { get; set; } //玩家信息
 
-    public string ValveRoutingInfo { get; set; }
+    [JsonPropertyName("LastPing")]
+    public long? LastPing { get; set; } //上次与大厅通信时间
 
-    public bool KleiOfficial { get; set; } //是否是官方服务器
+    [JsonPropertyName("Description")]
+    public string? Description { get; set; } //房间描述
 
-    public bool ServerPaused { get; set; } //世界是否暂停
+    [JsonPropertyName("Tick")]
+    public int? Tick { get; set; } //Tick
 
-    public LobbyDayInfo DaysInfo { get; set; } //天数信息
+    [JsonPropertyName("IsClientModsOff")]
+    public bool? IsClientModsOff { get; set; }
 
-    //TODO: 未完成
-    public object WorldGen { get; set; } //世界配置
+    [JsonPropertyName("Nat")]
+    public int? Nat { get; set; } //服务器网络类型  公网5内网7
 
-    public string SteamId { get; set; }
+    [JsonPropertyName("IsEvent")]
+    public bool? IsEvent { get; set; }
 
-    public string SteamRoom { get; set; }
+    [JsonPropertyName("IsValveCloudServer")]
+    public bool? IsValveCloudServer { get; set; }
 
-    public object Users { get; set; } //始终为null
+    [JsonPropertyName("ValvePopId")]
+    public string? ValvePopId { get; set; }
 
-    public List<LobbyModInfo> ModsInfo { get; set; } //mod信息
+    [JsonPropertyName("ValveRoutingInfo")]
+    public string? ValveRoutingInfo { get; set; }
+
+    [JsonPropertyName("IsKleiOfficial")]
+    public bool? IsKleiOfficial { get; set; } //是否是官方服务器
+
+    [JsonPropertyName("DaysInfo")]
+    public LobbyDaysInfo? DaysInfo { get; set; } //天数信息
+
+    [JsonPropertyName("WorldGen")]
+    public object? WorldGen { get; set; } //世界配置
+
+    [JsonPropertyName("Users")]
+    public object? Users { get; set; } //始终为null
+
+    [JsonPropertyName("ModsInfo")]
+    public LobbyModInfo[]? ModsInfo { get; set; } //mod信息
+
+
 
 
     public string? GetPlayersString(Func<LobbyPlayerInfo, bool>? func = null)
     {
-        if (Players is null || Players.Count == 0) return null;
+        if (Players is null || Players.Length == 0) return null;
         var players = string.Join(", ", Players.Where(func ?? (v => true)).Select(v =>
         {
             string prefab = v.Prefab;
             if (string.IsNullOrWhiteSpace(prefab)) prefab = "未选择";
-            return $"{v.Name}({prefab})";
+            return $"{v.Name}({Translate.ToChinese(prefab)})";
         }));
         return players;
     }

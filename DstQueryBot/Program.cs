@@ -1,16 +1,100 @@
 ﻿using EleCho.GoCqHttpSdk;
 using EleCho.GoCqHttpSdk.Message;
 using EleCho.GoCqHttpSdk.MessageMatching;
+using Ilyfairy.DstQueryBot.Bot;
 using Ilyfairy.DstQueryBot.ServerQuery;
+using Serilog;
 
 namespace Ilyfairy.DstQueryBot;
 
 internal class Program
 {
-    static async Task Main(string[] args)
-    {
-        var config = AppConfig.GetOrCreate();
+    private static AppConfig config = null!;
 
+    static async Task Main()
+    {
+        config = AppConfig.GetOrCreate();
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .WriteTo.Console()
+            .CreateLogger();
+
+        await GensokyoMain(); // 连接gensokyo
+        //await GoCqHttpMain(); // 连接gocqhttp
+    }
+
+
+    static async Task GensokyoMain()
+    {
+        GensokyoBot bot = new(config.Ws, config.Http);
+        ServerQueryManager dst = new(config.DstQueryConfig);
+
+        AppDomain.CurrentDomain.UnhandledException += (e, sender) =>
+        {
+            Console.WriteLine($"未经处理的异常:{sender.ExceptionObject}");
+        };
+
+        bot.OnMessage += async (sender, e) =>
+        {
+            if (string.IsNullOrWhiteSpace(e.RawMessage))
+                return;
+
+            if (e.MessageType == "group")
+            {
+                await Console.Out.WriteLineAsync($"接收群消息: {e.RawMessage}");
+            }
+
+            var message = e.RawMessage.Trim().TrimStart('/');
+
+            string? r;
+            try
+            {
+                CancellationTokenSource cts = new();
+                cts.CancelAfter(5000);
+                r = await dst.InputAsync($"{e.GroupId}:{e.UserId}", message, cts.Token);
+            }
+            catch (Exception ex)
+            {
+                await bot.SendGroupMessageAsync(e.GroupId, "获取失败");
+                Log.Error("异常: {Exception}", ex);
+                return;
+            }
+            if (r != null)
+            {
+                await bot.SendGroupMessageAsync(e.GroupId, r);
+                Console.WriteLine("结束");
+                Console.WriteLine();
+                return;
+            }
+
+            Console.WriteLine("结束");
+            Console.WriteLine();
+        };
+
+
+        await Task.Run(async () =>
+        {
+            while (true)
+            {
+                try
+                {
+                    await bot.RunAsync();
+
+                    await Console.Out.WriteLineAsync("断开 重连...");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"异常, 重连...{e}");
+                }
+                await Task.Delay(1000);
+            }
+        });
+
+    }
+
+
+    static async Task GoCqHttpMain()
+    {
         CqWsSession session = new(new()
         {
             BaseUri = new(config.Ws),
@@ -57,6 +141,7 @@ internal class Program
             catch (Exception ex)
             {
                 await session.SendGroupMessageAsync(context.GroupId, new CqMessage("获取失败"));
+                Log.Error("异常: {Exception}", ex);
                 return;
             }
             if (r != null)

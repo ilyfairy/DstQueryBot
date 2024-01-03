@@ -2,11 +2,11 @@
 
 public class LobbyResult
 {
-    public DateTime DateTime { get; set; }
-    public DateTime LastUpdate { get; set; }
+    public DateTimeOffset DateTime { get; set; }
+    public DateTimeOffset LastUpdate { get; set; }
     public int Count { get; set; }
-    public int AllCount { get; set; }
-    public int MaxPage { get; set; }
-    public int Page { get; set; }
+    public int TotalCount { get; set; }
+    public int MaxPageIndex { get; set; }
+    public int PageIndex { get; set; }
     public LobbyDetailsData[] List { get; set; }
 }

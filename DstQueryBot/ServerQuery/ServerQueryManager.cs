@@ -2,9 +2,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Ilyfairy.DstQueryBot.Helpers;
 using Ilyfairy.DstQueryBot.LobbyModels;
+using Serilog;
 
 namespace Ilyfairy.DstQueryBot.ServerQuery;
 
@@ -81,11 +84,11 @@ public partial class ServerQueryManager
                             }
                             return await GetDetailsDataStringAsync(user.LobbyData.List[index - 1].RowId, cancellationToken);
                         case "p" or "page":
-                            if (index <= 0 || index > user.LobbyData.MaxPage + 1)
+                            if (index <= 0 || index > user.LobbyData.MaxPageIndex + 1)
                             {
                                 return "超出范围";
                             }
-                            user.Query.Page = index - 1;
+                            user.Query.PageIndex = index - 1;
                             await UpdateList(user);
                             return user.QueryType switch
                             {
@@ -143,24 +146,21 @@ public partial class ServerQueryManager
             {
                 user.Query.IP = ip;
             }
-            if (MatchKey(filter, "模式", "mode") is string mode)
+            if (MatchKey(filter, "模式", "mode", "gamemode") is string mode)
             {
-                user.Query.Mode = mode;
+                user.Query.GameMode = Translate.ToEnglish(mode);
             }
             if (MatchKey(filter, "pvp") != null)
             {
-                user.Query.IsPvP = true;
+                user.Query.IsPvp = true;
             }
             if (MatchKey(filter, "conn", "connect", "connected", "count", "人数", "连接数") is string connectedString)
             {
-                if (int.TryParse(connectedString, out var connected))
-                {
-                    if (connected >= 0) user.Query.ConnectionCount = connected;
-                }
+                user.Query.Connected = connectedString;
             }
             if (MatchKey(filter, "season", "季节") is string season)
             {
-                user.Query.Season = season;
+                user.Query.Season = Translate.ToEnglish(season);
             }
             if (MatchKey(filter, "host") is string host)
             {
@@ -168,7 +168,11 @@ public partial class ServerQueryManager
             }
             if (MatchKey(filter, "day", "天数") is string day)
             {
-                user.Query.Day = day;
+                user.Query.Days = day;
+            }
+            if (MatchKey(filter, "预设", "角色", "prefab") is string prefab)
+            {
+                user.Query.PlayerPrefab = Translate.ToEnglish(prefab);
             }
         }
 
@@ -176,7 +180,7 @@ public partial class ServerQueryManager
         {
             foreach (var item in keys)
             {
-                if (str.StartsWith($"{item} ", StringComparison.OrdinalIgnoreCase))
+                if (str.StartsWith($"{item}", StringComparison.OrdinalIgnoreCase))
                 {
                     return str[item.Length..].Trim();
                 }
@@ -192,21 +196,26 @@ public partial class ServerQueryManager
     {
         var details = await GetDetailsAsync(rowId, cancellationToken);
         StringBuilder s = new(128);
-        s.AppendLine($"{details.Name} ({details.Connected}/{details.MaxConnections}) {(details.Password ? "🔒" : "")}");
-        s.AppendLine($"地址: {details.Address}:{details.Port}");
-        s.AppendLine($"PVP: {(details.PVP ? "是" : "否")}");
+        s.AppendLine($"{details.Name} ({details.Connected}/{details.MaxConnections}) {(details.IsPassword ? "🔒" : "")}");
+
+        string ip = details.Address.IP;
+        if (Config.IsIPReplace)
+            ip = ip.Replace(".", ",");
+
+        s.AppendLine($"地址: {ip}:{details.Port}");
+        s.AppendLine($"PVP: {(details.IsPvp ? "是" : "否")}");
         s.AppendLine($"Host: {details.Host}");
-        s.AppendLine($"模式: {details.Intent}/{details.Mode}");
+        s.AppendLine($"模式: {Translate.ToChinese(details.Intent)}/{Translate.ToChinese(details.Mode)}");
         s.AppendLine($"天数信息: 第{details.DaysInfo?.Day.ToString() ?? "未知"}天 {details.Season}({details.DaysInfo?.DaysElapsedInSeason.ToString() ?? "未知"}/{(details.DaysInfo?.DaysElapsedInSeason + details.DaysInfo?.DaysLeftInSeason)?.ToString() ?? "未知"})");
-        if (!string.IsNullOrWhiteSpace(details.Desc))
+        if (!string.IsNullOrWhiteSpace(details.Description))
         {
-            s.AppendLine($"描述: {details.Desc.Trim()}");
+            s.AppendLine($"描述: {details.Description.Trim()}");
         }
-        if (details.Players?.Count > 0)
+        if (details.Players?.Length > 0)
         {
             s.AppendLine($"玩家: {details.GetPlayersString()}");
         }
-        if (details.ModsInfo != null && details.ModsInfo.Count > 0)
+        if (details.ModsInfo != null && details.ModsInfo.Length > 0)
         {
             s.AppendLine($"模组: {string.Join(", ", details.ModsInfo.Select(v => $"{v.Name}"))}");
         }
@@ -216,41 +225,43 @@ public partial class ServerQueryManager
     {
         var details = await GetDetailsAsync(rowId, cancellationToken);
         StringBuilder s = new(128);
-        s.AppendLine($"{details.Name} ({details.Connected}/{details.MaxConnections}) {(details.Password ? "🔒" : "")}");
-        s.AppendLine($"模式: {details.Intent}/{details.Mode}");
+        s.AppendLine($"{details.Name} ({details.Connected}/{details.MaxConnections}) {(details.IsPassword ? "🔒" : "")}");
+        s.AppendLine($"模式: {Translate.ToChinese(details.Intent)}/{Translate.ToChinese(details.Mode)}");
         s.AppendLine($"天数信息: 第{details.DaysInfo?.Day.ToString() ?? "未知"}天 {details.Season}({details.DaysInfo?.DaysElapsedInSeason.ToString() ?? "未知"}/{(details.DaysInfo?.DaysElapsedInSeason + details.DaysInfo?.DaysLeftInSeason)?.ToString() ?? "未知"})");
-        if (!string.IsNullOrWhiteSpace(details.Desc))
+        if (!string.IsNullOrWhiteSpace(details.Description))
         {
-            s.AppendLine($"描述: {details.Desc.Trim()}");
+            s.AppendLine($"描述: {details.Description.Trim()}");
         }
-        if (details.Players?.Count > 0)
+        if (details.Players?.Length > 0)
         {
             s.AppendLine($"玩家: {details.GetPlayersString()}");
         }
         return s.ToString().Trim();
     }
+
     public string? GetServerQueryString(QueryUser user)
     {
         if (user.LobbyData == null || user.Query == null || user.QueryType != QueryType.Server) return null;
         if (user.LobbyData.Count == 0) return "没有搜索到任何结果";
         StringBuilder s = new(128);
-        s.AppendLine($"当前是第{user.LobbyData.Page + 1}页 一共{user.LobbyData.MaxPage + 1}页");
-        for (int i = 0; i < Math.Min(user.LobbyData.List.Length, user.Query.PageCount); i++)
+        s.AppendLine($"当前是第{user.LobbyData.PageIndex + 1}页 一共{user.LobbyData.MaxPageIndex + 1}页");
+        for (int i = 0; i < Math.Min(user.LobbyData.List.Length, user.Query.PageCount ?? 0); i++)
         {
             s.AppendLine($"{i + 1}. {GetServerSingleLineString(user.LobbyData.List[i])}");
         }
         return s.ToString().Trim();
     }
+
     public string? GetPlayerQueryString(QueryUser user)
     {
         if (user.LobbyData == null || user.Query == null || user.QueryType != QueryType.Player || user.Query.PlayerName == null) return null;
         if (user.LobbyData.Count == 0) return "没有搜索到相关玩家";
         StringBuilder s = new(128);
-        s.AppendLine($"当前是第{user.LobbyData.Page + 1}页 一共{user.LobbyData.MaxPage + 1}页");
-        for (int i = 0; i < Math.Min(user.LobbyData.List.Length, user.Query.PageCount); i++)
+        s.AppendLine($"当前是第{user.LobbyData.PageIndex + 1}页 一共{user.LobbyData.MaxPageIndex + 1}页");
+        for (int i = 0; i < Math.Min(user.LobbyData.List.Length, user.Query.PageCount ?? 0); i++)
         {
             s.AppendLine($"{i + 1}. {GetServerSingleLineString(user.LobbyData.List[i])}");
-            s.AppendLine($"  玩家: {user.LobbyData.List[i].GetPlayersString(v => v.Name.Contains(user.Query.PlayerName))}");
+            s.AppendLine($"  玩家: {user.LobbyData.List[i].GetPlayersString(v => v.Name.Contains(user.Query.PlayerName.Value.Value))}");
         }
         return s.ToString().Trim();
     }
@@ -259,43 +270,7 @@ public partial class ServerQueryManager
     public async Task UpdateList(QueryUser user)
     {
         if (user.Query == null) return;
-        user.LobbyData = await GetListAsync(GetUrlQueryList(user.Query!));
-    }
-
-    public KeyValuePair<string, string>[] GetUrlQueryList(QueryKeys query)
-    {
-        List<KeyValuePair<string, string>> queryList = new(8);
-        if (query.ConnectionCount is { } conn)
-        {
-            queryList.Add(new("ConnectedCount", conn.ToString()));
-        }
-        if (query.Day is { } day)
-        {
-            queryList.Add(new("Day", day));
-        }
-        if (query.Host is { } host)
-        {
-            queryList.Add(new("HostKleiId", host));
-        }
-        if (query.IP is { } ip)
-        {
-            queryList.Add(new("IP", ip));
-        }
-        if (query.ServerName is { } serverName)
-        {
-            queryList.Add(new("Name", serverName));
-        }
-        if (query.PlayerName is { } playerName)
-        {
-            queryList.Add(new("PlayerName", playerName));
-        }
-        if (query.Season is { } season)
-        {
-            queryList.Add(new("season", season));
-        }
-        queryList.Add(new("Page", query.Page.ToString()));
-        queryList.Add(new("PageCount", query.PageCount.ToString()));
-        return queryList.ToArray();
+        user.LobbyData = await GetListAsync(user.Query);
     }
 
     public void RemoveUser(string userId)
@@ -324,17 +299,32 @@ public partial class ServerQueryManager
     #region Api
     public async Task<LobbyDetailsData> GetDetailsAsync(string rowId, CancellationToken cancellationToken = default)
     {
-        var response = await http.PostAsync($"https://api.dstserverlist.top/api/details?id={WebUtility.UrlEncode(rowId)}", null);
-        var data = await response.Content.ReadFromJsonAsync<LobbyDetailsData>();
-        if (data == null) throw new Exception("get dst list failed");
-        return data;
+        var url = $"https://api.dstserverlist.top/api/v2/server/details/{WebUtility.UrlEncode(rowId)}";
+        Log.Information("获取详细信息  RowId:{RowId}  URL:{RUL}", rowId, url);
+        var response = await http.PostAsync(url, null, cancellationToken);
+        var data = await response.Content.ReadFromJsonAsync<DetailsResponse>(cancellationToken);
+        if (data == null || data.Code is not 200) throw new Exception("get dst list failed");
+        return data.Server!;
     }
 
-    public async Task<LobbyResult> GetListAsync(KeyValuePair<string, string>[]? searchParams = null, CancellationToken cancellationToken = default)
+    public async Task<LobbyResult> GetListAsync(ListQueryParams searchParams = null, CancellationToken cancellationToken = default)
     {
-        string? searchParamsString = searchParams == null ? null : string.Join("&", searchParams.Select(v => $"{WebUtility.UrlEncode(v.Key)}={WebUtility.UrlEncode(v.Value)}"));
-        var response = await http.PostAsync($"https://api.dstserverlist.top/api/list?{searchParamsString}", null, cancellationToken);
-        var data = await response.Content.ReadFromJsonAsync<LobbyResult>();
+        var url = $"https://api.dstserverlist.top/api/v2/server/list";
+        Log.Information("请求列表  URL:{RUL}", url);
+        var json = JsonSerializer.Serialize(searchParams);
+
+        var response = await http.PostAsync(url, new StringContent(json, null, "application/json"), cancellationToken);
+        string str = await response.Content.ReadAsStringAsync(cancellationToken);
+        LobbyResult? data;
+        try
+        {
+             data = JsonSerializer.Deserialize<LobbyResult>(str);
+        }
+        catch (Exception e)
+        {
+            Log.Error("反序列化异常 Json:{Json}", str);
+            throw;
+        }
         if (data == null) throw new Exception("get dst list failed");
         return data;
     }
@@ -343,12 +333,9 @@ public partial class ServerQueryManager
     {
         try
         {
-            var response = await http.PostAsync($"https://api.dstserverlist.top/api/server/version", null);
-            var data = await response.Content.ReadAsStringAsync();
-            if (data == null) throw new Exception("get dst list failed");
-            JsonNode? json = JsonNode.Parse(data);
-            if (json == null) return null;
-            return json["version"]?.GetValue<long>();
+            var version = await http.GetStringAsync($"https://api.dstserverlist.top/api/v2/server/version", cancellationToken);
+            if (version == null) throw new Exception("get dst list failed");
+            return long.Parse(version);
         }
         catch (Exception)
         {
