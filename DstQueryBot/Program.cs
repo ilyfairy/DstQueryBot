@@ -1,4 +1,5 @@
-﻿using EleCho.GoCqHttpSdk;
+﻿using System.Collections.Concurrent;
+using EleCho.GoCqHttpSdk;
 using EleCho.GoCqHttpSdk.Message;
 using EleCho.GoCqHttpSdk.MessageMatching;
 using Ilyfairy.DstQueryBot.Bot;
@@ -10,6 +11,7 @@ namespace Ilyfairy.DstQueryBot;
 internal class Program
 {
     private static AppConfig config = null!;
+    private static ConcurrentDictionary<long, GroupCache> groupCache = new();
 
     static async Task Main()
     {
@@ -19,8 +21,8 @@ internal class Program
             .WriteTo.Console()
             .CreateLogger();
 
-        await GensokyoMain(); // 连接gensokyo
-        //await GoCqHttpMain(); // 连接gocqhttp
+        //await GensokyoMain(); // 连接gensokyo
+        await GoCqHttpMain(); // 连接gocqhttp
     }
 
 
@@ -114,8 +116,30 @@ internal class Program
 
         async ValueTask<bool> IsNotSend(long groupId)
         {
-            var info = await session.GetGroupMemberListAsync(groupId);
-            return info?.Members.Any(v => config?.NotSendQQ.Contains(v.UserId) ?? true) ?? true;
+            IReadOnlyList<CqGroupMember> members;
+            if (groupCache.TryGetValue(groupId, out var cache))
+            {
+                if (DateTime.Now - cache.LastUpdatedDateTime > TimeSpan.FromHours(24))
+                {
+                    var info = await session.GetGroupMemberListAsync(groupId);
+                    if (info is null) return true;
+                    cache.Members = info.Members;
+                    cache.LastUpdatedDateTime = DateTime.Now;
+                }
+                members = cache.Members;
+            }
+            else
+            {
+                var info = await session.GetGroupMemberListAsync(groupId);
+                if (info is null) return true;
+                members = info.Members;
+                groupCache[groupId] = new GroupCache()
+                {
+                    LastUpdatedDateTime = DateTime.Now,
+                    Members = members,
+                };
+            }
+            return members.Any(v => config?.NotSendQQ.Contains(v.UserId) ?? true);
         }
 
 
@@ -127,10 +151,21 @@ internal class Program
         //查询服务器
         session.UseGroupMessage(async context =>
         {
-            if (await IsNotSend(context.GroupId)) return;
+            Log.Information($"接收消息: {context.RawMessage}");
 
-            await Console.Out.WriteLineAsync($"接收消息: {context.RawMessage}");
-
+            try
+            {
+                if (await IsNotSend(context.GroupId))
+                {
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("IsNotSend异常", ex);
+                return;
+            }
+            
             string? r;
             try
             {
@@ -220,4 +255,11 @@ internal class Program
 
 
     }
+}
+
+
+public class GroupCache
+{
+    public IReadOnlyList<CqGroupMember> Members { get; set; } = [];
+    public DateTime LastUpdatedDateTime { get; set; }
 }

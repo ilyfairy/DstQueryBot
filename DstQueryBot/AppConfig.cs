@@ -14,6 +14,9 @@ public  class AppConfig
 
     public QueryConfig DstQueryConfig { get; set; } = new();
 
+    /// <summary>
+    /// 如果群里包含指定QQ, 则不发送消息
+    /// </summary>
     public long[] NotSendQQ { get; set; } = Array.Empty<long>();
 
     public static AppConfig GetOrCreate()
