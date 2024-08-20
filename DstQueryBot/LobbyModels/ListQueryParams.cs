@@ -3,7 +3,7 @@
 /// <summary>
 /// 查询参数
 /// </summary>
-public class ListQueryParams
+public record class ListQueryParams
 {
     /// <summary>
     /// 每页数量

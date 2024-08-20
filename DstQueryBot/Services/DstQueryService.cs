@@ -273,6 +273,27 @@ public class DstQueryService
                             var season = seasonMatch.Groups["Season"].Value;
                             queryParams.Season = Translate.ToEnglish(season);
                         }
+                        else if (Regex.Match(lineString, @"^(精确(匹配)?|Exact)$", RegexOptions.IgnoreCase) is { Success: true })
+                        {
+                            //isExact = true;
+                            if (context.QueryParams.ServerName is { IsRegex: false, Value: { } }) // not null and not regex
+                            {
+                                context.QueryParams.ServerName = new()
+                                {
+                                    Value = $"^{Regex.Escape(context.QueryParams.ServerName.Value.Value)}$",
+                                    IsRegex = true,
+                                };
+                            }
+                            else if (context.QueryParams.PlayerName is { IsRegex: false, Value: { } }) // not null and not regex
+                            {
+                                context.QueryParams.PlayerName = new()
+                                {
+                                    Value = $"^{Regex.Escape(context.QueryParams.PlayerName.Value.Value)}$",
+                                    IsRegex = true,
+                                };
+                            }
+                        }
+
                     }
                 }
             }
@@ -282,7 +303,6 @@ public class DstQueryService
             {
                 StringBuilder s = new();
 
-                
                 var server = context.ListResponse!.List[selectedNumber - 1];
                 LobbyDetailsData detailedServer;
                 try
@@ -440,7 +460,14 @@ public class DstQueryService
                             var targetPlayers = server.Players?.Where(v =>
                             {
                                 if (context.QueryParams?.PlayerName?.Value is null) return true;
-                                return v.Name.Contains(context.QueryParams.PlayerName.Value.Value);
+                                if (context.QueryParams.PlayerName.Value.IsRegex)
+                                {
+                                    return Regex.IsMatch(v.Name, context.QueryParams.PlayerName.Value.Value);
+                                }
+                                else
+                                {
+                                    return v.Name.Contains(context.QueryParams.PlayerName.Value.Value);
+                                }
                             }) ?? [];
                             s.Append("  玩家: ");
                             foreach (var player in targetPlayers)
