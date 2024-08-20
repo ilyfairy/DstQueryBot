@@ -1,7 +1,4 @@
-﻿using System.Text.Json.Serialization;
-
-namespace Ilyfairy.DstQueryBot.LobbyModels;
-
+﻿namespace DstQueryBot.LobbyModels;
 
 /// <summary>
 /// 查询参数
@@ -70,6 +67,11 @@ public class ListQueryParams
     /// IP地址, 可以使用CIDR或者通配符\*.\*.\*.\*
     /// </summary>
     public string? IP { get; set; }
+
+    /// <summary>
+    /// 端口, 可以运算符&lt; &lt;= > >= =
+    /// </summary>
+    public string? Port { get; set; }
 
     /// <summary>
     /// 房主的KleiId

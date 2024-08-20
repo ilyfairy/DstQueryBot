@@ -1,4 +1,4 @@
-﻿namespace Ilyfairy.DstQueryBot.LobbyModels;
+﻿namespace DstQueryBot.LobbyModels;
 
 /// <summary>
 /// 大厅玩家信息

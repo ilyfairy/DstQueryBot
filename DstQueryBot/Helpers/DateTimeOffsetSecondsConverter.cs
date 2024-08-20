@@ -1,9 +1,9 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstQueryBot.Helpers;
+namespace DstQueryBot.Helpers;
 
-internal class DateTimeOffsetSecConverter : JsonConverter<DateTimeOffset>
+internal class DateTimeOffsetSecondsConverter : JsonConverter<DateTimeOffset>
 {
     public override DateTimeOffset Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {

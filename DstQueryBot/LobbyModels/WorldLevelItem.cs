@@ -1,5 +1,4 @@
-﻿namespace Ilyfairy.DstServerQuery.Models;
-
+﻿namespace DstServerQuery.Models;
 
 public class WorldLevelItem
 {

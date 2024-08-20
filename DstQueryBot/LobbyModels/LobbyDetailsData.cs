@@ -1,8 +1,8 @@
-﻿using Ilyfairy.DstQueryBot.Helpers;
-using Ilyfairy.DstServerQuery.Models;
+﻿using DstQueryBot.Helpers;
+using DstServerQuery.Models;
 using System.Text.Json.Serialization;
 
-namespace Ilyfairy.DstQueryBot.LobbyModels;
+namespace DstQueryBot.LobbyModels;
 
 /// <summary>
 /// 单个服务器列表详细信息

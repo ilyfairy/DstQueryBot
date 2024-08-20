@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Ilyfairy.DstQueryBot.Helpers;
+﻿namespace DstQueryBot.Helpers;
 
 public static class Translate
 {
@@ -12,6 +6,21 @@ public static class Translate
     {
         return text switch
         {
+            "spring" => "春",
+            "summer" => "夏",
+            "autumn" => "秋",
+            "winter" => "冬",
+
+            "earlyspring" => "早春",
+            "earlysummer" => "早夏",
+            "earlyautumn" => "早秋",
+            "earlywinter" => "早冬",
+
+            "latespring" => "晚春",
+            "latesummer" => "晚夏",
+            "lateautumn" => "晚秋",
+            "latewinter" => "晚冬",
+
             "survival" => "生存",
             "relaxed" => "轻松",
             "endless" => "无尽",
@@ -50,6 +59,15 @@ public static class Translate
     {
         return text switch
         {
+            "春" => "spring",
+            "夏" => "summer",
+            "秋" => "autumn",
+            "冬" => "winter",
+            "春天" => "spring",
+            "夏天" => "summer",
+            "秋天" => "autumn",
+            "冬天" => "winter",
+
             "生存" => "survival",
             "轻松" => "relaxed",
             "无尽" => "endless",

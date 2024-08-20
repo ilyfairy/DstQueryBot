@@ -1,4 +1,4 @@
-﻿namespace Ilyfairy.DstQueryBot.LobbyModels;
+﻿namespace DstQueryBot.LobbyModels;
 
 public class DetailsResponse
 {

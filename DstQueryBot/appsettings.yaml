@@ -1,0 +1,32 @@
+OneBot: 
+    WebsocketAddress: "ws://127.0.0.1:7000"
+    AccessToken: null
+    IsWhitelist: false # 是否启用白名单, 否则启用黑名单
+    WhiteList: # 群白名单
+        - 12345
+    BlackList: # 群黑名单
+        - 12345
+
+DstConfig: # 详细见 Models/DstConfig.cs
+    PageMaxSize: 9
+    Timeout: 600
+    IsRemovedWhenInputInvalid: true
+    GetVersionPrompt: ^(获取|查询)饥荒版本$
+    SearchServersPrompt: ^查服\s*(?<Text>.*)$
+    SearchPlayerPrompt: ^查玩家\s*(?<Text>.*)$
+    PreviousPagePrompt: ^\s*上一页\s*$
+    NextPagePrompt: ^\s*下一页\s*$
+    ShowBriefInfoPrompt: ^(?<Number>\d+)$
+    ShowDetailedInfoPrompt: ^(\.(?<Number>\d+))|((?<Number>\d+)\.)$
+    SwitchPagePrompt: ^p(?<Page>\d+)$
+    NotFoundServerText: 没有搜索到相关服务器
+    NotFoundPlayerText: 没有搜索到相关玩家
+    ListItemFormat: '{ItemNumber}. {ServerName} ({CurrentPlayerCount}/{MaxPlayerCount}){IsPassword:🔒|}'
+
+# 格式化说明:
+# {Value}   默认格式化
+# {Value:True文本|False文本}   bool判断
+# {Value:X}   大写十六进制输出
+# {Value:{Value2}|{Value3}}   bool判断, 如果Value为True, 则输出Value2的值, 否则输出Value3的值
+# {Value:isnull:未知|{Value:X}}   null判断, 如果Value为null则输出'未知', 否则以十六进制输出Value的值
+# 详细请参考 https://github.com/axuno/SmartFormat/wiki/
