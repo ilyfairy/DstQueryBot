@@ -2,6 +2,6 @@
 
 public class IPAddressInfo
 {
-    public string IP { get; set; }
-    public string IsoCode { get; set; }
+    public required string IP { get; set; }
+    public string? IsoCode { get; set; }
 }

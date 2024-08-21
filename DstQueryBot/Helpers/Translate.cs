@@ -1,8 +1,11 @@
-﻿namespace DstQueryBot.Helpers;
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace DstQueryBot.Helpers;
 
 public static class Translate
 {
-    public static string ToChinese(string text)
+    [return: NotNullIfNotNull(nameof(text))]
+    public static string? ToChinese(string? text)
     {
         return text switch
         {

@@ -4,7 +4,6 @@ using EleCho.GoCqHttpSdk;
 using EleCho.GoCqHttpSdk.Message;
 using EleCho.GoCqHttpSdk.MessageMatching;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Configuration.Yaml;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -25,8 +24,13 @@ internal class Program
             configure.WriteTo.Console();
         });
 
+#pragma warning disable IL2026
+#pragma warning disable IL3050
         builder.Services.AddSingleton(builder.Configuration.GetSection("DstConfig").Get<DstConfig>() ?? new());
         builder.Services.AddSingleton(builder.Configuration.GetSection("OneBot").Get<OneBotConfig>() ?? new());
+#pragma warning restore IL3050
+#pragma warning restore IL2026
+
         builder.Services.AddSingleton<DstQueryService>();
         builder.Services.AddHostedService<OneBotHostedService>();
 
@@ -36,8 +40,9 @@ internal class Program
 }
 
 
-public class OneBotHostedService(DstQueryService dst, OneBotConfig oneBotConfig, DstConfig dstConfig, ILogger<OneBotHostedService> logger) : IHostedService
+public class OneBotHostedService(DstQueryService dst, OneBotConfig oneBotConfig, DstConfig dstConfig, ILogger<OneBotHostedService>? logger) : IHostedService
 {
+    private bool isStopped = false;
     private readonly CqWsSession session = new(new()
     {
         BaseUri = new(oneBotConfig.WebsocketAddress),
@@ -51,13 +56,14 @@ public class OneBotHostedService(DstQueryService dst, OneBotConfig oneBotConfig,
     {
         AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
         {
-            logger.LogError(e.ExceptionObject as Exception, "未经处理的异常");
+            logger?.LogError(e.ExceptionObject as Exception, "未经处理的异常");
         };
 
         //查询服务器
         session.UseGroupMessage(async context =>
         {
-            logger.LogInformation("接收消息: {Message}", context.RawMessage);
+            logger?.LogInformation("接收消息: {Message}", context.RawMessage);
+
             // 群白名单
             if (oneBotConfig.IsGroupWhitelist && !oneBotConfig.GroupWhiteList.AsSpan().Contains(context.GroupId))
                 return;
@@ -81,14 +87,20 @@ public class OneBotHostedService(DstQueryService dst, OneBotConfig oneBotConfig,
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "查询异常");
+                logger?.LogError(ex, "查询异常");
                 await session.SendGroupMessageAsync(context.GroupId, new CqMessage("获取失败"));
                 return;
             }
             if (r != null)
             {
-                await session.SendGroupMessageAsync(context.GroupId, new CqMessage(r));
-                return;
+                try
+                {
+                    await session.SendGroupMessageAsync(context.GroupId, new CqMessage(r));
+                }
+                catch (Exception ex)
+                {
+                    logger?.LogError(ex, "发送消息异常");
+                }
             }
         });
         
@@ -124,16 +136,21 @@ public class OneBotHostedService(DstQueryService dst, OneBotConfig oneBotConfig,
                 try
                 {
                     await session.StartAsync();
-                    logger.LogInformation("启动成功");
+                    logger?.LogInformation("启动成功");
 
                     await session.WaitForShutdownAsync();
                     await session.StopAsync();
 
-                    logger.LogWarning("断开 重连...");
+                    if (isStopped)
+                        return;
+
+                    logger?.LogWarning("断开 重连...");
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "异常");
+                    if (!cancellationToken.IsCancellationRequested)
+                        logger?.LogError(ex, "异常");
+
                     if (session.IsConnected)
                     {
                         await session.StopAsync();
@@ -148,6 +165,7 @@ public class OneBotHostedService(DstQueryService dst, OneBotConfig oneBotConfig,
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
+        isStopped = true;
         return session.StopAsync();
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.Http.Json;
 using System.Text;
-using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using DstQueryBot.Helpers;
 using DstQueryBot.LobbyModels;
@@ -13,7 +13,7 @@ namespace DstQueryBot.Services;
 
 public class DstQueryService
 {
-    private readonly ILogger<DstQueryService> _logger;
+    private readonly ILogger<DstQueryService>? _logger;
     private static readonly char[] _newLineSplitChars = ['\r', '\n'];
 
     private readonly SmartFormatter _smartFormatter;
@@ -24,10 +24,10 @@ public class DstQueryService
 
     public DstConfig DstConfig { get; }
 
-    public DstQueryService(ILogger<DstQueryService> logger, DstConfig dstConfig)
+    public DstQueryService(DstConfig dstConfig, ILogger<DstQueryService>? logger)
     {
-        this._logger = logger;
         DstConfig = dstConfig;
+        _logger = logger;
         _smartFormatter = Smart.CreateDefaultSmartFormat(new SmartFormat.Core.Settings.SmartSettings()
         {
             CaseSensitivity = SmartFormat.Core.Settings.CaseSensitivityType.CaseInsensitive,
@@ -72,7 +72,7 @@ public class DstQueryService
                 && Regex.Match(firstLine, DstConfig.SearchServersPrompt) is { Success: true } serverMatch)
             {
                 var text = serverMatch.Groups["Text"].Value;
-                _logger.LogInformation("查询服务器: {Text}", text);
+                _logger?.LogInformation("查询服务器: {Text}", text);
 
                 ListQueryParams listQueryParams = new();
                 listQueryParams.ServerName = text;
@@ -85,7 +85,7 @@ public class DstQueryService
                 && Regex.Match(firstLine, DstConfig.SearchPlayerPrompt) is { Success: true } playerMatch)
             {
                 var text = playerMatch.Groups["Text"].Value;
-                _logger.LogInformation("查询玩家: {Text}", text);
+                _logger?.LogInformation("查询玩家: {Text}", text);
 
                 ListQueryParams listQueryParams = new();
                 listQueryParams.PlayerName = text;
@@ -273,6 +273,7 @@ public class DstQueryService
                             var season = seasonMatch.Groups["Season"].Value;
                             queryParams.Season = Translate.ToEnglish(season);
                         }
+                        // 精确匹配
                         else if (Regex.Match(lineString, @"^(精确(匹配)?|Exact)$", RegexOptions.IgnoreCase) is { Success: true })
                         {
                             //isExact = true;
@@ -299,11 +300,11 @@ public class DstQueryService
             }
 
             // 获取服务器信息
-            if (isShowBrief || isShowDetailed && context.ListResponse is not null)
+            if ((isShowBrief || isShowDetailed) && context.ListResponse is not null)
             {
                 StringBuilder s = new();
 
-                var server = context.ListResponse!.List[selectedNumber - 1];
+                var server = context.ListResponse.List[selectedNumber - 1];
                 LobbyDetailsData detailedServer;
                 try
                 {
@@ -322,7 +323,7 @@ public class DstQueryService
                     }
                 }
 
-                var param = new
+                var param = new DetailedServerFormatParams
                 {
                     Name = detailedServer.Name,
                     CurrentPlayerCount = detailedServer.Connected,
@@ -339,7 +340,7 @@ public class DstQueryService
                     Port = detailedServer.Port,
                     IsPvP = detailedServer.IsPvp,
                     Host = detailedServer.Host,
-                    Description = detailedServer.Description,
+                    Description = detailedServer.Description
                 };
 
                 // 名称
@@ -373,19 +374,19 @@ public class DstQueryService
                     s.Append("玩家: ");
                     foreach (var player in detailedServer.Players ?? [])
                     {
-                        var playerParam = new
+                        var playerItemParams = new PlayerItemFormatParams() 
                         {
                             PlayerName = player.Name,
+                            Id = player.NetId,
+                            Color = player.Color,
+                            PlayerPrefab = player.Prefab,
                             TranslatedPlayerPrefab = Translate.ToChinese(player.Prefab switch
                             {
                                 "" => "未选择",
                                 _ => player.Prefab,
                             }),
-                            PlayerPrefab = player.Prefab,
-                            Color = player.Color,
-                            Id = player.NetId,
                         };
-                        s.AppendSmart("{PlayerName}({TranslatedPlayerPrefab})", playerParam);
+                        s.AppendSmart("{PlayerName}({TranslatedPlayerPrefab})", playerItemParams);
                         s.Append(SplitString);
                     }
                     s.TrimEnd(SplitString);
@@ -398,13 +399,14 @@ public class DstQueryService
                     s.Append("模组: ");
                     foreach (var mod in detailedServer.ModsInfo ?? [])
                     {
-                        s.AppendSmart("{ModName}", new
+                        var modItemParams = new ModItemFormatParams()
                         {
                             ModName = mod.Name,
                             ModVersion = mod.CurrentVersion, // 当前版本
                             ModNewVersion = mod.NewVersion, // 最新版本
-                            IsClientDownload = mod.IsClientDownload // 是否需要客户端下载
-                        });
+                            IsClientDownload = mod.IsClientDownload, // 是否需要客户端下载
+                        };
+                        s.AppendSmart("{ModName}", modItemParams);
                         s.Append(SplitString);
                     }
                     s.TrimEnd(SplitString);
@@ -436,15 +438,16 @@ public class DstQueryService
                     StringBuilder s = new();
                     var pageSize = Math.Min(list.Count, DstConfig.PageMaxSize);
 
-                    s.AppendLineSmart("当前是第{PageNumber}页 一共{MaxPageNumber}页", new
+                    var pageParams = new PageFormatParams
                     {
                         PageNumber = list.PageIndex + 1,
                         MaxPageNumber = list.MaxPageIndex + 1,
-                    });
+                    };
+                    s.AppendLineSmart("当前是第{PageNumber}页 一共{MaxPageNumber}页", pageParams);
                     for (int i = 0; i < pageSize; i++)
                     {
                         var server = list.List[i];
-                        var serverString = _smartFormatter.Format(DstConfig.ListItemFormat, new
+                        var listItemParams = new ListItemFormatParams
                         {
                             ItemNumber = i + 1,
                             ServerName = server.Name,
@@ -453,7 +456,9 @@ public class DstQueryService
                             IsPassword = server.IsPassword,
                             Platform = server.Platform,
                             Host = server.Host,
-                        });
+                        };
+
+                        var serverString = _smartFormatter.Format(DstConfig.ListItemFormat, listItemParams);
                         s.AppendLine(serverString);
                         if (context.IsShowTargetPlayersInList)
                         {
@@ -472,13 +477,19 @@ public class DstQueryService
                             s.Append("  玩家: ");
                             foreach (var player in targetPlayers)
                             {
-                                s.AppendSmart("{PlayerName}({PlayerPrefab})", new
+                                var playerParam = new PlayerItemFormatParams
                                 {
                                     PlayerName = player.Name,
-                                    PlayerPrefab = Translate.ToChinese(player.Prefab),
-                                    Color = player.Color,
                                     Id = player.NetId,
-                                });
+                                    Color = player.Color,
+                                    PlayerPrefab = player.Prefab,
+                                    TranslatedPlayerPrefab = Translate.ToChinese(player.Prefab switch
+                                    {
+                                        "" => "未选择",
+                                        _ => player.Prefab,
+                                    }),
+                                };
+                                s.AppendSmart("{PlayerName}({PlayerPrefab})", playerParam);
                                 s.Append(SplitString);
                             }
                             s.TrimEnd(SplitString);
@@ -505,9 +516,9 @@ public class DstQueryService
     public async Task<LobbyDetailsData> GetDetailsAsync(string rowId, CancellationToken cancellationToken = default)
     {
         var url = $"https://api.dstserverlist.top/api/v2/server/details/{Uri.EscapeDataString(rowId)}";
-        _logger.LogInformation("获取详细信息  RowId:{RowId}  URL:{Url}", rowId, url);
+        _logger?.LogInformation("获取详细信息  RowId:{RowId}  URL:{Url}", rowId, url);
         var response = await _http.PostAsync(url, null, cancellationToken);
-        var data = await response.Content.ReadFromJsonAsync<DetailsResponse>(cancellationToken);
+        var data = await response.Content.ReadFromJsonAsync<DetailsResponse>(JsonGeneratorSourceContext.Default.DetailsResponse, cancellationToken);
         if (data == null || data.Code is not 200) throw new Exception("get dst list failed");
         return data.Server!;
     }
@@ -515,21 +526,10 @@ public class DstQueryService
     public async Task<LobbyResult> GetListAsync(ListQueryParams searchParams, CancellationToken cancellationToken = default)
     {
         var url = $"https://api.dstserverlist.top/api/v2/server/list";
-        _logger.LogInformation("请求列表  URL:{Url}", url);
-        var json = JsonSerializer.Serialize(searchParams);
+        _logger?.LogInformation("请求列表  URL:{Url}", url);
 
-        var response = await _http.PostAsync(url, new StringContent(json, null, "application/json"), cancellationToken);
-        string str = await response.Content.ReadAsStringAsync(cancellationToken);
-        LobbyResult? data;
-        try
-        {
-            data = JsonSerializer.Deserialize<LobbyResult>(str);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "反序列化异常 Json:{Json}", str);
-            throw;
-        }
+        var response = await _http.PostAsync(url, JsonContent.Create(searchParams, JsonGeneratorSourceContext.Default.ListQueryParams), cancellationToken);
+        var data = await response.Content.ReadFromJsonAsync(JsonGeneratorSourceContext.Default.LobbyResult, cancellationToken);
         if (data == null) throw new Exception("获取服务器列表失败");
         return data;
     }
@@ -552,3 +552,64 @@ public class DstQueryService
 }
 
 public record DstQueryResult(DstContext Context, string? Result);
+
+[JsonSourceGenerationOptions]
+[JsonSerializable(typeof(LobbyResult))]
+[JsonSerializable(typeof(DetailsResponse))]
+[JsonSerializable(typeof(ListQueryParams))]
+internal partial class JsonGeneratorSourceContext : JsonSerializerContext;
+
+file record DetailedServerFormatParams
+{
+    public required string Name { get; set; }
+    public required int CurrentPlayerCount { get; set; }
+    public required int MaxPlayerCount { get; set; }
+    public required bool IsPassword { get; set; }
+    public required string Mode { get; set; }
+    public required string Intent { get; set; }
+    public required int? Days { get; set; }
+    public required string? Season { get; set; }
+    public required int? DaysElapsedInSeason { get; set; }
+    public required int? DaysLeftInSeason { get; set; }
+    public required int? TotalDaysSeason { get; set; }
+    public required string IP { get; set; }
+    public required int Port { get; set; }
+    public required bool IsPvP { get; set; }
+    public required string? Host { get; set; }
+    public required string? Description { get; set; }
+}
+
+file record PlayerItemFormatParams
+{
+    public required string PlayerName { get; set; }
+    public required string TranslatedPlayerPrefab { get; set; }
+    public required string PlayerPrefab { get; set; }
+    public required string Color { get; set; }
+    public required string Id { get; set; }
+}
+
+file record ModItemFormatParams
+{
+    public required string ModName { get; set; }
+    public required string ModVersion { get; set; }
+    public required string ModNewVersion { get; set; }
+    public required bool IsClientDownload { get; set; }
+}
+
+file record ListItemFormatParams
+{
+    public required int ItemNumber { get; set; }
+    public required string ServerName { get; set; }
+    public required int CurrentPlayerCount { get; set; }
+    public required int MaxPlayerCount { get; set; }
+    public required bool IsPassword { get; set; }
+    public required string Platform { get; set; }
+    public required string? Host { get; set; }
+}
+
+file record PageFormatParams
+{
+    public required int PageNumber { get; set; }
+    public required int MaxPageNumber { get; set; }
+
+}

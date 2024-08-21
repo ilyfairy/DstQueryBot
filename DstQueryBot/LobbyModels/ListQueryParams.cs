@@ -30,22 +30,22 @@ public record class ListQueryParams
     /// 可以使用|分割,进行多个排序, 使用+-前缀代表升序或者降序排序<br/>
     /// IsExclude属性无效
     /// </summary>
-    public StringArray? Sort { get; set; }
+    public ServerStringArray? Sort { get; set; }
 
     /// <summary>
     /// 服务器名
     /// </summary>
-    public RegexValue? ServerName { get; set; }
+    public ServerRegexValue? ServerName { get; set; }
 
     /// <summary>
     /// 玩家名
     /// </summary>
-    public RegexValue? PlayerName { get; set; }
+    public ServerRegexValue? PlayerName { get; set; }
 
     /// <summary>
     /// 季节, 可以使用|获取多个季节
     /// </summary>
-    public StringArray? Season { get; set; }
+    public ServerStringArray? Season { get; set; }
 
     /// <summary>
     /// 服务器版本 可以使用运算符&lt; &lt;= > >= =
@@ -55,13 +55,13 @@ public record class ListQueryParams
     /// <summary>
     /// 游戏模式, 可以使用|获取多个模式
     /// </summary>
-    public StringArray? GameMode { get; set; }
+    public ServerStringArray? GameMode { get; set; }
 
 
     /// <summary>
     /// 游戏风格, 可以使用|获取多个风格
     /// </summary>
-    public StringArray? Intent { get; set; }
+    public ServerStringArray? Intent { get; set; }
 
     /// <summary>
     /// IP地址, 可以使用CIDR或者通配符\*.\*.\*.\*
@@ -81,22 +81,22 @@ public record class ListQueryParams
     /// <summary>
     /// 平台, 可以使用|来获取多个平台
     /// </summary>
-    public StringArray? Platform { get; set; }
+    public ServerStringArray? Platform { get; set; }
 
     /// <summary>
     /// 国家, 根据IsoCode
     /// </summary>
-    public StringArray? Country { get; set; }
+    public ServerStringArray? Country { get; set; }
 
     /// <summary>
     /// 根据Mod名搜索
     /// </summary>
-    public RegexValue? ModsName { get; set; }
+    public ServerRegexValue? ModsName { get; set; }
 
     /// <summary>
     /// 通过ModId搜索Mod, 可以使用|来获取多个Id
     /// </summary>
-    public StringArray? ModsId { get; set; }
+    public ServerStringArray? ModsId { get; set; }
 
     /// <summary>
     /// 根据天数信息查询, 可以使用运算符&lt; &lt;= > >= =
@@ -111,7 +111,7 @@ public record class ListQueryParams
     /// <summary>
     /// 描述
     /// </summary>
-    public RegexValue? Description { get; set; }
+    public ServerRegexValue? Description { get; set; }
 
     /// <summary>
     /// 是否有密码
@@ -126,7 +126,7 @@ public record class ListQueryParams
     /// <summary>
     /// 标签, 使用|获取多个标签
     /// </summary>
-    public StringArray? Tags { get; set; }
+    public ServerStringArray? Tags { get; set; }
 
     /// <summary>
     /// 是否PVP
@@ -146,7 +146,7 @@ public record class ListQueryParams
     /// <summary>
     /// 玩家角色
     /// </summary>
-    public RegexValue? PlayerPrefab { get; set; }
+    public ServerRegexValue? PlayerPrefab { get; set; }
 
     /// <summary>
     /// 是否启用Mods
@@ -161,7 +161,7 @@ public record class ListQueryParams
     /// <summary>
     /// 所有者的玩家ID
     /// </summary>
-    public StringArray? OwnerNetId { get; set; }
+    public ServerStringArray? OwnerNetId { get; set; }
 
     /// <summary>
     /// 是否允许新玩家加入
@@ -187,7 +187,7 @@ public record class ListQueryParams
 /// <summary>
 /// 正则值
 /// </summary>
-public readonly record struct RegexValue
+public readonly record struct ServerRegexValue
 {
     /// <summary>
     /// 值
@@ -202,13 +202,13 @@ public readonly record struct RegexValue
     /// </summary>
     public bool IsExclude { get; init; }
 
-    public static implicit operator RegexValue(string? value) => new() { Value = value };
+    public static implicit operator ServerRegexValue(string? value) => new() { Value = value };
 }
 
 /// <summary>
 /// 字符串或数组
 /// </summary>
-public readonly record struct StringArray
+public readonly record struct ServerStringArray
 {
     /// <summary>
     /// 值
@@ -220,5 +220,5 @@ public readonly record struct StringArray
     /// </summary>
     public bool IsExclude { get; init; }
 
-    public static implicit operator StringArray(string? value) => new() { Value = [value] };
+    public static implicit operator ServerStringArray(string? value) => new() { Value = [value] };
 }

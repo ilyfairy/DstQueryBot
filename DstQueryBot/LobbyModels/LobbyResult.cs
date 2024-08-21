@@ -8,5 +8,5 @@ public class LobbyResult
     public int TotalCount { get; set; }
     public int MaxPageIndex { get; set; }
     public int PageIndex { get; set; }
-    public LobbyDetailsData[] List { get; set; }
+    public required LobbyDetailsData[] List { get; set; }
 }
