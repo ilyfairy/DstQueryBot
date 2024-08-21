@@ -1,27 +1,32 @@
 OneBot: 
     WebsocketAddress: "ws://127.0.0.1:7000"
     AccessToken: null
-    IsWhitelist: false # 是否启用白名单, 否则启用黑名单
-    WhiteList: # 群白名单
+    IsUserWhitelist: false # 是否开启用户白名单, 否则启用黑名单
+    IsGroupWhitelist: false # 是否开启群白名单, 否则启用黑名单
+    GroupWhiteList: # 群白名单
         - 12345
-    BlackList: # 群黑名单
+    GroupBlackList: # 群黑名单
+        - 12345
+    UserWhiteList: # 用户白名单
+        - 12345
+    UserBlackList: # 用户黑名单
         - 12345
 
 DstConfig: # 详细见 Models/DstConfig.cs
     PageMaxSize: 9
-    Timeout: 600
-    IsRemovedWhenInputInvalid: true
-    GetVersionPrompt: ^(获取|查询)饥荒版本$
-    SearchServersPrompt: ^查服\s*(?<Text>.*)$
-    SearchPlayerPrompt: ^查玩家\s*(?<Text>.*)$
-    PreviousPagePrompt: ^\s*上一页\s*$
-    NextPagePrompt: ^\s*下一页\s*$
-    ShowBriefInfoPrompt: ^(?<Number>\d+)$
-    ShowDetailedInfoPrompt: ^(\.(?<Number>\d+))|((?<Number>\d+)\.)$
-    SwitchPagePrompt: ^p(?<Page>\d+)$
-    NotFoundServerText: 没有搜索到相关服务器
-    NotFoundPlayerText: 没有搜索到相关玩家
-    ListItemFormat: '{ItemNumber}. {ServerName} ({CurrentPlayerCount}/{MaxPlayerCount}){IsPassword:🔒|}'
+    Timeout: 600 # 超时时间(秒), 超时后需要重新查询
+    IsRemovedWhenInputInvalid: true # 是否在输入无效时删除上下文
+    GetVersionPrompt: ^(获取|查询)饥荒版本$ # 查询饥荒版本触发词
+    SearchServersPrompt: ^查服\s*(?<Text>.*)$ # 查询服务器触发词
+    SearchPlayerPrompt: ^查玩家\s*(?<Text>.*)$ # 查询玩家触发词
+    PreviousPagePrompt: ^\s*上一页\s*$ # 上一页触发词
+    NextPagePrompt: ^\s*下一页\s*$ # 下一页触发词
+    ShowBriefInfoPrompt: ^(?<Number>\d+)$ # 显示简略信息触发词
+    ShowDetailedInfoPrompt: ^(\.(?<Number>\d+))|((?<Number>\d+)\.)$ # 显示详细信息触发词
+    SwitchPagePrompt: ^p(?<Page>\d+)$ # 切换页触发词
+    NotFoundServerText: 没有搜索到相关服务器 # 未查询到服务器时的回复
+    NotFoundPlayerText: 没有搜索到相关玩家 # 未查询到玩家时的回复
+    ListItemFormat: '{ItemNumber}. {ServerName} ({CurrentPlayerCount}/{MaxPlayerCount}){IsPassword:🔒|}' # 服务器列表项的格式
 
 # 格式化说明:
 # {Value}   默认格式化

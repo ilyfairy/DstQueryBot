@@ -58,6 +58,18 @@ public class OneBotHostedService(DstQueryService dst, OneBotConfig oneBotConfig,
         session.UseGroupMessage(async context =>
         {
             logger.LogInformation("接收消息: {Message}", context.RawMessage);
+            // 群白名单
+            if (oneBotConfig.IsGroupWhitelist && !oneBotConfig.GroupWhiteList.AsSpan().Contains(context.GroupId))
+                return;
+            // 群黑名单
+            if(!oneBotConfig.IsGroupWhitelist && oneBotConfig.GroupBlackList.AsSpan().Contains(context.GroupId))
+                return;
+            // 用户白名单
+            if (oneBotConfig.IsUserWhitelist && !oneBotConfig.UserWhiteList.AsSpan().Contains(context.UserId))
+                return;
+            // 用户黑名单
+            if(!oneBotConfig.IsUserWhitelist && oneBotConfig.UserBlackList.AsSpan().Contains(context.UserId))
+                return;
 
             string? r;
             try

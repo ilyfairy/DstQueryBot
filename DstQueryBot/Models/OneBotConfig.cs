@@ -12,9 +12,16 @@ public class OneBotConfig
     public string? AccessToken { get; set; }
 
     /// <summary>
-    /// 是否启用白名单, 否则启用黑名单
+    /// 是否开启群白名单, 否则启用黑名单
     /// </summary>
-    public bool IsWhitelist { get; set; } = false;
-    public long[] WhiteList { get; set; } = [];
-    public long[] BlackList { get; set; } = [];
+    public bool IsGroupWhitelist { get; set; } = false;
+    public long[] GroupWhiteList { get; set; } = [];
+    public long[] GroupBlackList { get; set; } = [];
+
+    /// <summary>
+    /// 是否开启用户白名单, 否则启用黑名单
+    /// </summary>
+    public bool IsUserWhitelist { get; set; } = false;
+    public long[] UserWhiteList { get; set; } = [];
+    public long[] UserBlackList { get; set; } = [];
 }
