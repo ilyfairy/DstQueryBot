@@ -1,28 +1,17 @@
-﻿using Ilyfairy.DstQueryBot.ServerQuery;
+﻿using DstQueryBot.Models;
+using DstQueryBot.Services;
 
-namespace Test
+DstQueryService dst = new(new DstConfig(), null);
+
+while (true)
 {
-    internal class Program
+    Console.Write(">>> ");
+    string? input = Console.ReadLine();
+    if (input == null) break;
+    var r = await dst.HandleAsync("console", input);
+    if (r?.Result is not null)
     {
-        private static async Task Main(string[] args)
-        {
-
-            ServerQueryManager manager = new();
-
-
-            while (true)
-            {
-                Console.WriteLine(">>> ");
-                string? input = Console.ReadLine();
-                if (input == null) break;
-                var r = await manager.InputAsync("console", input+"\nDay 0");
-                Console.WriteLine(r);
-            }
-
-
-
-
-
-        }
+        Console.WriteLine(r.Result);
     }
 }
+
