@@ -7,6 +7,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>DstQueryBot</RootNamespace>
     <UserSecretsId>bb4be9d6-7817-4f7a-aec2-e1b792affaca</UserSecretsId>
+    <RollForward>LatestMajor</RollForward>
     <PublishAot>true</PublishAot>
     <LangVersion>13.0</LangVersion>
     <StripSymbols>true</StripSymbols>
@@ -28,13 +29,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <RdXmlFile Include="DstQueryBot.rd.xml" />
-    <EmbeddedResource Include="DstQueryBot.rd.xml" />
     <None Update="appsettings.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
+  <!-- Linux AOT 交叉编译, 需要安装clang工作负载, 以及下载zig到项目目录, 参考 https://github.com/MichalStrehovsky/PublishAotCross -->
+  <ItemGroup>
+    <RdXmlFile Include="DstQueryBot.rd.xml" />
+  </ItemGroup>
   <Import Project="../PublishAotCross/src/PublishAotCross.targets" />
   <Target Name="Test" BeforeTargets="Build">
     <AppendEnvironmentPath Value="$(MSBuildProjectDirectory)/../zig" />
