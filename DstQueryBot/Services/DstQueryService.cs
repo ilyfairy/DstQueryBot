@@ -24,6 +24,9 @@ public class DstQueryService
 
     public DstConfig DstConfig { get; }
 
+    private readonly Regex? _searchServersPromptRegexCache;
+    private readonly Regex? _searchPlayersPromptRegexCache;
+
     public DstQueryService(DstConfig dstConfig, ILogger<DstQueryService>? logger)
     {
         DstConfig = dstConfig;
@@ -37,6 +40,11 @@ public class DstQueryService
             }
         });
         Smart.Default = _smartFormatter;
+
+        if (!string.IsNullOrWhiteSpace(DstConfig.SearchServersPrompt))
+            _searchServersPromptRegexCache = new Regex(DstConfig.SearchServersPrompt, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        if (!string.IsNullOrWhiteSpace(DstConfig.SearchPlayerPrompt))
+            _searchPlayersPromptRegexCache = new Regex(DstConfig.SearchPlayerPrompt, RegexOptions.IgnoreCase | RegexOptions.Compiled);
     }
 
 
@@ -68,8 +76,7 @@ public class DstQueryService
             context.LastTriggerTime = DateTimeOffset.Now;
 
             // 查询服务器
-            if (!string.IsNullOrWhiteSpace(DstConfig.SearchServersPrompt)
-                && Regex.Match(firstLine, DstConfig.SearchServersPrompt) is { Success: true } serverMatch)
+            if (_searchServersPromptRegexCache?.Match(firstLine) is { Success: true } serverMatch)
             {
                 var text = serverMatch.Groups["Text"].Value;
                 _logger?.LogInformation("查询服务器: {Text}", text);
@@ -81,8 +88,7 @@ public class DstQueryService
                 isOutputList = true;
             }
             // 查询玩家
-            else if (!string.IsNullOrWhiteSpace(DstConfig.SearchPlayerPrompt)
-                && Regex.Match(firstLine, DstConfig.SearchPlayerPrompt) is { Success: true } playerMatch)
+            else if (_searchPlayersPromptRegexCache?.Match(firstLine) is { Success: true } playerMatch)
             {
                 var text = playerMatch.Groups["Text"].Value;
                 _logger?.LogInformation("查询玩家: {Text}", text);
@@ -273,10 +279,21 @@ public class DstQueryService
                             var season = seasonMatch.Groups["Season"].Value;
                             queryParams.Season = Translate.ToEnglish(season);
                         }
+                        // 正则匹配
+                        else if (Regex.Match(lineString, @"^(正则(表达式)?|Regex|rx)$", RegexOptions.IgnoreCase) is { Success: true })
+                        {
+                            if (context.QueryParams.ServerName is { IsRegex: false, Value: { } }) // not null and not regex
+                            {
+                                context.QueryParams.ServerName = context.QueryParams.ServerName.Value with { IsRegex = true };
+                            }
+                            else if (context.QueryParams.PlayerName is { IsRegex: false, Value: { } }) // not null and not regex
+                            {
+                                context.QueryParams.PlayerName = context.QueryParams.PlayerName.Value with { IsRegex = true };
+                            }
+                        }
                         // 精确匹配
                         else if (Regex.Match(lineString, @"^(精确(匹配)?|Exact)$", RegexOptions.IgnoreCase) is { Success: true })
                         {
-                            //isExact = true;
                             if (context.QueryParams.ServerName is { IsRegex: false, Value: { } }) // not null and not regex
                             {
                                 context.QueryParams.ServerName = new()
@@ -552,12 +569,6 @@ public class DstQueryService
 }
 
 public record DstQueryResult(DstContext Context, string? Result);
-
-[JsonSourceGenerationOptions]
-[JsonSerializable(typeof(LobbyResult))]
-[JsonSerializable(typeof(DetailsResponse))]
-[JsonSerializable(typeof(ListQueryParams))]
-internal partial class JsonGeneratorSourceContext : JsonSerializerContext;
 
 file record DetailedServerFormatParams
 {

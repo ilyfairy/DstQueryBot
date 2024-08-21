@@ -63,7 +63,7 @@ public class OneBotHostedService(DstQueryService dst, OneBotConfig oneBotConfig,
         session.UseGroupMessage(async context =>
         {
             logger?.LogInformation("接收消息: {Message}", context.RawMessage);
-
+            
             // 群白名单
             if (oneBotConfig.IsGroupWhitelist && !oneBotConfig.GroupWhiteList.AsSpan().Contains(context.GroupId))
                 return;
