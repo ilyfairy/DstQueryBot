@@ -48,6 +48,13 @@ public class DstQueryService
     }
 
 
+    /// <summary>
+    /// 处理查询请求
+    /// </summary>
+    /// <param name="id">用户ID</param>
+    /// <param name="input">输入内容</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>查询结果</returns>
     public async Task<DstQueryResult?> HandleAsync(string id, string input, CancellationToken cancellationToken = default)
     {
         var context = Users.GetOrAdd(id, _ => new DstContext() { LastTriggerTime = DateTimeOffset.Now });
@@ -370,7 +377,7 @@ public class DstQueryService
                 // 是否PvP
                 if (isShowDetailed)
                     s.AppendLineSmart("PvP: {IsPvP:是|否}", param); // {条件:True文本|False文本}
-                
+
                 // Host
                 if (isShowDetailed)
                     s.AppendLineSmart("Host: {Host}", param); // 房主KleiID
@@ -388,11 +395,14 @@ public class DstQueryService
                 // 玩家
                 if (detailedServer.Players is { Length: > 0 })
                 {
-                    s.Append("玩家: ");
+                    int playerIndex = 0;
+                    //s.Append("玩家: ");
+                    s.AppendLine("-------- 玩家列表 --------");
                     foreach (var player in detailedServer.Players ?? [])
                     {
-                        var playerItemParams = new PlayerItemFormatParams() 
+                        var playerItemParams = new PlayerItemFormatParams()
                         {
+                            Number = ++playerIndex,
                             PlayerName = player.Name,
                             Id = player.NetId,
                             Color = player.Color,
@@ -403,36 +413,39 @@ public class DstQueryService
                                 _ => player.Prefab,
                             }),
                         };
-                        s.AppendSmart("{PlayerName}({TranslatedPlayerPrefab})", playerItemParams);
-                        s.Append(SplitString);
+                        s.AppendLineSmart("{Number}. {PlayerName}({TranslatedPlayerPrefab})", playerItemParams);
+                        //s.Append(SplitString);
                     }
-                    s.TrimEnd(SplitString);
-                    s.AppendLine();
+                    //s.TrimEnd(SplitString);
                 }
 
                 // 模组
                 if (isShowDetailed && detailedServer.ModsInfo is { Length: > 0 })
                 {
-                    s.Append("模组: ");
+                    int modIndex = 0;
+                    //s.Append("模组: ");
+                    s.AppendLine("-------- 模组列表 --------");
                     foreach (var mod in detailedServer.ModsInfo ?? [])
                     {
                         var modItemParams = new ModItemFormatParams()
                         {
+                            Number = ++modIndex,
                             ModName = mod.Name,
                             ModVersion = mod.CurrentVersion, // 当前版本
                             ModNewVersion = mod.NewVersion, // 最新版本
                             IsClientDownload = mod.IsClientDownload, // 是否需要客户端下载
                         };
-                        s.AppendSmart("{ModName}", modItemParams);
-                        s.Append(SplitString);
+                        s.AppendLineSmart("{Number}. {ModName}", modItemParams);
+                        //s.Append(SplitString);
                     }
-                    s.TrimEnd(SplitString);
+                    //s.TrimEnd(SplitString);
                 }
 
+                s.TrimEndNewLine();
                 return new DstQueryResult(context, s.ToString());
             }
             // 查询服务器列表
-            else if(isOutputList && context.QueryParams is not null)
+            else if (isOutputList && context.QueryParams is not null)
             {
                 context.QueryParams.PageIndex = context.PageIndex;
                 context.QueryParams.PageCount = DstConfig.PageMaxSize;
@@ -441,7 +454,7 @@ public class DstQueryService
 
                 if (list.Count == 0)
                 {
-                    if(context.QueryParams.PlayerName is not null)
+                    if (context.QueryParams.PlayerName is not null)
                     {
                         return new DstQueryResult(context, DstConfig.NotFoundPlayerText);
                     }
@@ -491,11 +504,13 @@ public class DstQueryService
                                     return v.Name.Contains(context.QueryParams.PlayerName.Value.Value);
                                 }
                             }) ?? [];
+                            int playerIndex = 0;
                             s.Append("  玩家: ");
                             foreach (var player in targetPlayers)
                             {
                                 var playerParam = new PlayerItemFormatParams
                                 {
+                                    Number = ++playerIndex,
                                     PlayerName = player.Name,
                                     Id = player.NetId,
                                     Color = player.Color,
@@ -592,6 +607,7 @@ file record DetailedServerFormatParams
 
 file record PlayerItemFormatParams
 {
+    public required int Number { get; set; }
     public required string PlayerName { get; set; }
     public required string TranslatedPlayerPrefab { get; set; }
     public required string PlayerPrefab { get; set; }
@@ -601,6 +617,7 @@ file record PlayerItemFormatParams
 
 file record ModItemFormatParams
 {
+    public required int Number { get; set; }
     public required string ModName { get; set; }
     public required string ModVersion { get; set; }
     public required string ModNewVersion { get; set; }

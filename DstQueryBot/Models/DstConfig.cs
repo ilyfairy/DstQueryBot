@@ -12,7 +12,7 @@ public class DstConfig
     /// <summary>
     /// 超时时间(秒), 超时后需要重新查询
     /// </summary>
-    public uint Timeout { get; set; } = 10 * 60;
+    public double Timeout { get; set; } = 10 * 60;
 
     /// <summary>
     /// 是否在输入无效时删除上下文

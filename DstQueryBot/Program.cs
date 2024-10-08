@@ -1,4 +1,5 @@
-﻿using DstQueryBot.Models;
+﻿using System.Diagnostics;
+using DstQueryBot.Models;
 using DstQueryBot.Services;
 using EleCho.GoCqHttpSdk;
 using EleCho.GoCqHttpSdk.Message;
@@ -58,7 +59,7 @@ public class OneBotHostedService(DstQueryService dst, OneBotConfig oneBotConfig,
         {
             logger?.LogError(e.ExceptionObject as Exception, "未经处理的异常");
         };
-
+        
         //查询服务器
         session.UseGroupMessage(async context =>
         {
@@ -77,11 +78,12 @@ public class OneBotHostedService(DstQueryService dst, OneBotConfig oneBotConfig,
             if(!oneBotConfig.IsUserWhitelist && oneBotConfig.UserBlackList.AsSpan().Contains(context.UserId))
                 return;
 
-            string? r;
+            string? r = null;
+            Stopwatch s = Stopwatch.StartNew();
             try
             {
                 CancellationTokenSource cts = new();
-                cts.CancelAfter(8000);
+                cts.CancelAfter(TimeSpan.FromSeconds(dstConfig.Timeout));
                 var result = await dst.HandleAsync($"{context.UserId}:{context.GroupId}", context.RawMessage, cts.Token);
                 r = result?.Result;
             }
@@ -89,7 +91,6 @@ public class OneBotHostedService(DstQueryService dst, OneBotConfig oneBotConfig,
             {
                 logger?.LogError(ex, "查询异常");
                 await session.SendGroupMessageAsync(context.GroupId, new CqMessage("获取失败"));
-                return;
             }
             if (r != null)
             {
@@ -101,6 +102,9 @@ public class OneBotHostedService(DstQueryService dst, OneBotConfig oneBotConfig,
                 {
                     logger?.LogError(ex, "发送消息异常");
                 }
+
+                s.Stop();
+                logger?.LogInformation("查询耗时: {Elapsed}ms", s.ElapsedMilliseconds);
             }
         });
         

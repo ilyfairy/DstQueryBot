@@ -1,5 +1,5 @@
 OneBot: 
-    WebsocketAddress: "ws://127.0.0.1:7000"
+    WebsocketAddress: "ws://127.0.0.1:7000" # OneBot协议地址
     AccessToken: null
     IsUserWhitelist: false # 是否开启用户白名单, 否则启用黑名单
     IsGroupWhitelist: false # 是否开启群白名单, 否则启用黑名单
