@@ -1,17 +1,17 @@
 # DstQueryBot
 
-## ½éÉÜ
+## ä»‹ç»
 
-»ùÓÚgo-cqhttpµÄ¼¢»Ä²éÑ¯»úÆ÷ÈË
+åŸºäºgo-cqhttpçš„é¥¥è’æŸ¥è¯¢æœºå™¨äºº
 
-- ²éÑ¯·şÎñÆ÷
-- ²éÑ¯Íæ¼Ò
-- »ñÈ¡¼¢»Ä×îĞÂ°æ±¾
+- æŸ¥è¯¢æœåŠ¡å™¨
+- æŸ¥è¯¢ç©å®¶
+- è·å–é¥¥è’æœ€æ–°ç‰ˆæœ¬
 
-## ²¿Êğ
+## éƒ¨ç½²
 
-Ç°Íù[go-cqhttp Release](https://github.com/Mrs4s/go-cqhttp/releases)ÏÂÔØgo-cqhttp  
+å‰å¾€[Largrange Release](https://github.com/LagrangeDev/Lagrange.Core)ä¸‹è½½Largrange.OneBot  
 
-ÔËĞĞgocqhtt¿ªÆôhttpºÍws²¢µÇÂ¼  
+è¿è¡ŒLargrange.OneBotå¼€å¯httpå’Œwså¹¶ç™»å½•  
 
-ÔËĞĞ±¾³ÌĞò
+è¿è¡Œæœ¬ç¨‹åº
